@@ -1,5 +1,6 @@
 #include "storage_manager.hpp"
 
+#include <algorithm>
 #include <memory>
 #include <string>
 #include <utility>
@@ -28,9 +29,7 @@ std::shared_ptr<Table> StorageManager::get_table(const std::string& name) const 
   return this->_tables.at(name);
 }
 
-bool StorageManager::has_table(const std::string& name) const {
-  return this->_tables.contains(name);
-}
+bool StorageManager::has_table(const std::string& name) const { return this->_tables.contains(name); }
 
 std::vector<std::string> StorageManager::table_names() const {
   auto table_names = std::vector<std::string>{};
@@ -50,13 +49,11 @@ void StorageManager::print(std::ostream& out) const {
   auto table_names_sorted = this->table_names();
   for (const auto& table_name : table_names_sorted) {
     auto table = this->get_table(table_name);
-    out << "Table Name: " << table_name << "\t# Columns: " << table->column_count() << "\t# Rows: "
-        << table->row_count() << "\t# Chunks: " << table->chunk_count() << "\n";
+    out << "Table Name: " << table_name << "\t# Columns: " << table->column_count()
+        << "\t# Rows: " << table->row_count() << "\t# Chunks: " << table->chunk_count() << "\n";
   }
 }
 
-void StorageManager::reset() {
-  this->_tables = std::unordered_map<std::string, std::shared_ptr<Table>>{};
-}
+void StorageManager::reset() { this->_tables = std::unordered_map<std::string, std::shared_ptr<Table>>{}; }
 
 }  // namespace opossum

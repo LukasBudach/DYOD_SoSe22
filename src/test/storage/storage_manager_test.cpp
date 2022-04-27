@@ -63,7 +63,9 @@ TEST_F(StorageStorageManagerTest, PrintFunction) {
   auto stream = std::stringstream{};
 
   // this is assuming the expected sorting from the StorageManager::table_names() function
-  auto expected_print = std::string{"Table Name: first_table\t# Columns: 0\t# Rows: 0\t# Chunks: 1\nTable Name: second_table\t# Columns: 0\t# Rows: 0\t# Chunks: 1\n"};
+  auto expected_print = std::string{
+      "Table Name: first_table\t# Columns: 0\t# Rows: 0\t# Chunks: 1\nTable Name: "
+      "second_table\t# Columns: 0\t# Rows: 0\t# Chunks: 1\n"};
   storage_manager.print(stream);
   EXPECT_EQ(stream.str(), expected_print);
 }
