@@ -6,7 +6,6 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include <iostream>
 
 #include "type_cast.hpp"
 #include "utils/assert.hpp"
@@ -15,6 +14,7 @@ namespace opossum {
 
 template <typename T>
 AllTypeVariant ValueSegment<T>::operator[](const ChunkOffset chunk_offset) const {
+  Assert(chunk_offset < this->_stored_values.size(), "Tried to access an element out of range!");
   return AllTypeVariant{this->_stored_values.at(chunk_offset)};
 }
 
@@ -25,7 +25,6 @@ void ValueSegment<T>::append(const AllTypeVariant& val) {
 
 template <typename T>
 ChunkOffset ValueSegment<T>::size() const {
-  // Implementation goes here
   return ChunkOffset{static_cast<ChunkOffset>(this->_stored_values.size())};
 }
 
@@ -36,8 +35,8 @@ const std::vector<T>& ValueSegment<T>::values() const {
 
 template <typename T>
 size_t ValueSegment<T>::estimate_memory_usage() const {
-  // Implementation goes here
-  Fail("Implementation is missing.");
+  const auto datapoint_size = sizeof(T);
+  return this->size() * datapoint_size;
 }
 
 // Macro to instantiate the following classes:

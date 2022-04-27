@@ -40,12 +40,19 @@ std::vector<std::string> StorageManager::table_names() const {
     table_names.push_back(table.first);
   }
 
+  std::sort(table_names.begin(), table_names.end());
+
   return table_names;
 }
 
 void StorageManager::print(std::ostream& out) const {
-  // Implementation goes here
-  Fail("Implementation is missing.");
+  // Implementation goes here(name, #columns, #rows, #chunks)
+  auto table_names_sorted = this->table_names();
+  for (const auto& table_name : table_names_sorted) {
+    auto table = this->get_table(table_name);
+    out << "Table Name: " << table_name << "\t# Columns: " << table->column_count() << "\t# Rows: "
+        << table->row_count() << "\t# Chunks: " << table->chunk_count() << "\n";
+  }
 }
 
 void StorageManager::reset() {

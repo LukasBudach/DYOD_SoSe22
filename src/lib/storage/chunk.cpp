@@ -20,7 +20,7 @@ void Chunk::add_segment(const std::shared_ptr<AbstractSegment> segment) {
 
 void Chunk::append(const std::vector<AllTypeVariant>& values) {
   Assert(values.size() == this->_segments.size(), "Row to be inserted has not equally many values as chunk columns!");
-  for (ColumnCount column_index; column_index < values.size(); ++column_index) {
+  for (ColumnCount column_index{0}; column_index < values.size(); ++column_index) {
     this->_segments.at(column_index)->append(values.at(column_index));
   }
 }
