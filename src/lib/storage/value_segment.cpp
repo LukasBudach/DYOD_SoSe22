@@ -6,6 +6,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <iostream>
 
 #include "type_cast.hpp"
 #include "utils/assert.hpp"
@@ -14,26 +15,23 @@ namespace opossum {
 
 template <typename T>
 AllTypeVariant ValueSegment<T>::operator[](const ChunkOffset chunk_offset) const {
-  // Implementation goes here
-  Fail("Implementation is missing.");
+  return AllTypeVariant{this->_stored_values.at(chunk_offset)};
 }
 
 template <typename T>
 void ValueSegment<T>::append(const AllTypeVariant& val) {
-  // Implementation goes here
-  Fail("Implementation is missing.");
+  this->_stored_values.push_back(type_cast<T>(val));
 }
 
 template <typename T>
 ChunkOffset ValueSegment<T>::size() const {
   // Implementation goes here
-  return ChunkOffset{std::numeric_limits<ChunkOffset>::max()};
+  return ChunkOffset{static_cast<ChunkOffset>(this->_stored_values.size())};
 }
 
 template <typename T>
 const std::vector<T>& ValueSegment<T>::values() const {
-  // Implementation goes here
-  Fail("Implementation is missing.");
+  return this->_stored_values;
 }
 
 template <typename T>

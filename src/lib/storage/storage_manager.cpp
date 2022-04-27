@@ -10,33 +10,37 @@
 namespace opossum {
 
 StorageManager& StorageManager::get() {
-  return *(new StorageManager());
-  // A really hacky fix to get the tests to run - replace this with your implementation
+  static auto instance = StorageManager{};
+  return instance;
 }
 
 void StorageManager::add_table(const std::string& name, std::shared_ptr<Table> table) {
-  // Implementation goes here
-  Fail("Implementation is missing.");
+  this->_tables.insert(std::make_pair(name, table));
 }
 
 void StorageManager::drop_table(const std::string& name) {
-  // Implementation goes here
-  Fail("Implementation is missing.");
+  Assert(this->has_table(name), "The table attempted to be removed does not exist.");
+  this->_tables.erase(name);
 }
 
 std::shared_ptr<Table> StorageManager::get_table(const std::string& name) const {
-  // Implementation goes here
-  return nullptr;
+  Assert(this->has_table(name), "The table attempted to be retrieved does not exist.");
+  return this->_tables.at(name);
 }
 
 bool StorageManager::has_table(const std::string& name) const {
-  // Implementation goes here
-  return false;
+  return this->_tables.contains(name);
 }
 
 std::vector<std::string> StorageManager::table_names() const {
-  // Implementation goes here
-  Fail("Implementation is missing.");
+  auto table_names = std::vector<std::string>{};
+  table_names.reserve(this->_tables.size());
+
+  for (const auto& table : this->_tables) {
+    table_names.push_back(table.first);
+  }
+
+  return table_names;
 }
 
 void StorageManager::print(std::ostream& out) const {
@@ -45,7 +49,7 @@ void StorageManager::print(std::ostream& out) const {
 }
 
 void StorageManager::reset() {
-  // Implementation goes here
+  this->_tables = std::unordered_map<std::string, std::shared_ptr<Table>>{};
 }
 
 }  // namespace opossum
