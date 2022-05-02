@@ -41,7 +41,7 @@ void Table::append(const std::vector<AllTypeVariant>& values) {
 }
 
 void Table::create_new_chunk() {
-  auto new_chunk = std::make_shared<Chunk>(Chunk{});
+  auto new_chunk = std::make_shared<Chunk>();
   for (const auto& column_type : _column_types) {
     resolve_data_type(column_type, [&](const auto data_type_t) {
       using ColumnDataType = typename decltype(data_type_t)::type;
