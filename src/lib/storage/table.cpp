@@ -18,10 +18,7 @@
 
 namespace opossum {
 
-Table::Table(const ChunkOffset target_chunk_size) {
-  create_new_chunk();
-  _target_chunk_size = target_chunk_size;
-}
+Table::Table(const ChunkOffset target_chunk_size) : _target_chunk_size{target_chunk_size} { create_new_chunk(); }
 
 void Table::add_column(const std::string& name, const std::string& type) {
   _column_names.push_back(name);
@@ -54,7 +51,7 @@ void Table::create_new_chunk() {
   _chunks.push_back(new_chunk);
 }
 
-ColumnCount Table::column_count() const { return _chunks.at(0)->column_count(); }
+ColumnCount Table::column_count() const { return static_cast<ColumnCount>(_column_names.size()); }
 
 ChunkOffset Table::row_count() const {
   auto total_rows = ChunkOffset{0};
@@ -64,7 +61,7 @@ ChunkOffset Table::row_count() const {
   return total_rows;
 }
 
-ChunkID Table::chunk_count() const { return ChunkID{static_cast<ChunkID>(_chunks.size())}; }
+ChunkID Table::chunk_count() const { return static_cast<ChunkID>(_chunks.size()); }
 
 ColumnID Table::column_id_by_name(const std::string& column_name) const {
   auto column_name_location = std::find(column_names().begin(), column_names().end(), column_name);

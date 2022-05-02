@@ -58,7 +58,7 @@ TEST_F(StorageStorageManagerTest, TableNames) {
   EXPECT_EQ(storage_manager.table_names(), expected_tables);
 }
 
-TEST_F(StorageStorageManagerTest, PrintFunction) {
+TEST_F(StorageStorageManagerTest, PrintTableInfo) {
   auto& storage_manager = StorageManager::get();
   auto stream = std::stringstream{};
 
