@@ -14,29 +14,29 @@ namespace opossum {
 
 template <typename T>
 AllTypeVariant ValueSegment<T>::operator[](const ChunkOffset chunk_offset) const {
-  Assert(chunk_offset < this->_stored_values.size(), "Tried to access an element out of range!");
-  return AllTypeVariant{this->_stored_values.at(chunk_offset)};
+  Assert(chunk_offset < _stored_values.size(), "Tried to access an element out of range!");
+  return AllTypeVariant{_stored_values.at(chunk_offset)};
 }
 
 template <typename T>
 void ValueSegment<T>::append(const AllTypeVariant& val) {
-  this->_stored_values.push_back(type_cast<T>(val));
+  _stored_values.push_back(type_cast<T>(val));
 }
 
 template <typename T>
 ChunkOffset ValueSegment<T>::size() const {
-  return ChunkOffset{static_cast<ChunkOffset>(this->_stored_values.size())};
+  return ChunkOffset{static_cast<ChunkOffset>(_stored_values.size())};
 }
 
 template <typename T>
 const std::vector<T>& ValueSegment<T>::values() const {
-  return this->_stored_values;
+  return _stored_values;
 }
 
 template <typename T>
 size_t ValueSegment<T>::estimate_memory_usage() const {
   const auto datapoint_size = sizeof(T);
-  return this->size() * datapoint_size;
+  return size() * datapoint_size;
 }
 
 // Macro to instantiate the following classes:
