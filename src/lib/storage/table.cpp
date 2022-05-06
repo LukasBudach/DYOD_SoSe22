@@ -10,6 +10,7 @@
 #include <utility>
 #include <vector>
 
+#include "dictionary_segment.hpp"
 #include "value_segment.hpp"
 
 #include "resolve_type.hpp"
@@ -82,8 +83,23 @@ std::shared_ptr<Chunk> Table::get_chunk(ChunkID chunk_id) { return _chunks.at(ch
 std::shared_ptr<const Chunk> Table::get_chunk(ChunkID chunk_id) const { return _chunks.at(chunk_id); }
 
 void Table::compress_chunk(const ChunkID chunk_id) {
-  // Implementation goes here
-  Fail("Implementation is missing.");
+  const auto& raw_chunk = get_chunk(chunk_id);  // get_chunk performs range check, so we are safe
+  auto compressed_chunk = std::make_shared<Chunk>();
+
+  // iterate over all columns (i.e. segments for the chunks)
+  for (auto column_index = ColumnID{0}; column_index < _column_types.size(); ++column_index) {
+    resolve_data_type(_column_types[column_index], [&](const auto data_type_t) {
+      // figure out the type of the segment
+      using ColumnDataType = typename decltype(data_type_t)::type;
+      // to the compressed chunk, add a dictionary-compressed segment based on the raw segment for this column
+      compressed_chunk->add_segment(std::make_shared<DictionarySegment<ColumnDataType>>(raw_chunk->get_segment(column_index)));
+    });
+  }
+
+  // replace the pointer to the raw chunk with a pointer to the compressed chunk
+  // TODO: do we need to consider anything here in regards to the users accessing the raw chunk?
+  _chunks[chunk_id] = compressed_chunk;
+
 }
 
 }  // namespace opossum

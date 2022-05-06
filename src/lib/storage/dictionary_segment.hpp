@@ -69,8 +69,11 @@ class DictionarySegment : public AbstractSegment {
   size_t estimate_memory_usage() const final;
 
  protected:
-  std::vector<T> _dictionary;
-  std::shared_ptr<AbstractAttributeVector> _attribute_vector;
+  std::vector<T> _dictionary{};  // contains unique values from ValueSegment - index is encoded value
+  // std::shared_ptr<AbstractAttributeVector> _attribute_vector{};  // contains encoded values
+  std::shared_ptr<AbstractAttributeVector> _attribute_vector{};  // contains encoded values
+
+  const ValueID get_encoded_value(const T& raw_value) const;
 };
 
 }  // namespace opossum

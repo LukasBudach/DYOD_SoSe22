@@ -9,6 +9,7 @@
 
 #include "abstract_segment.hpp"
 #include "chunk.hpp"
+#include "dictionary_segment.hpp"
 
 #include "utils/assert.hpp"
 
