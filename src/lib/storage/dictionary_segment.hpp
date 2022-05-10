@@ -10,6 +10,8 @@
 #include "all_type_variant.hpp"
 #include "types.hpp"
 
+#include "fixed_width_integer_vector.hpp"
+
 namespace opossum {
 
 class AbstractAttributeVector;
