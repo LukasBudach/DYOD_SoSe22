@@ -106,14 +106,16 @@ void Table::compress_chunk(const ChunkID chunk_id) {
   auto thread_pool = std::vector<std::thread>{_column_types.size()};
   const auto& raw_chunk = get_chunk(chunk_id);  // get_chunk performs range check, so we are safe
   auto compressed_chunk = std::make_shared<Chunk>();
-  auto compressed_segments = std::unordered_map<std::string, std::shared_ptr<AbstractSegment>>{};
+  auto compressed_segments = std::vector<std::shared_ptr<AbstractSegment>>{_column_types.size()};
+  auto segments_vec_mutex = std::mutex{};
 
-  auto compress_segment = [&](const auto segment_type, const auto column_index) {
+  auto compress_segment = [&raw_chunk, &compressed_segments, &segments_vec_mutex](const auto segment_type, const auto column_index) {
     resolve_data_type(segment_type, [&](const auto data_type_t) {
       // figure out the type of the segment
       using ColumnDataType = typename decltype(data_type_t)::type;
+      std::lock_guard<std::mutex> guard(segments_vec_mutex);
       // add compressed segment to the map of segment (column) name to segment to later add to chunk in correct order
-      compressed_segments.insert(std::pair{_column_names[column_index], std::make_shared<DictionarySegment<ColumnDataType>>(raw_chunk->get_segment(column_index))});
+      compressed_segments[column_index] = std::make_shared<DictionarySegment<ColumnDataType>>(raw_chunk->get_segment(column_index));
     });
   };
 
@@ -128,8 +130,8 @@ void Table::compress_chunk(const ChunkID chunk_id) {
   }
 
   // add the compressed segments to the chunk in correct order
-  for (const auto& column_name : _column_names) {
-    compressed_chunk->add_segment(compressed_segments.at(column_name));
+  for (auto column_index = ColumnID{0}; column_index < _column_types.size(); ++column_index) {
+    compressed_chunk->add_segment(compressed_segments[column_index]);
   }
 
   // replace existing chunk with the new, compressed one

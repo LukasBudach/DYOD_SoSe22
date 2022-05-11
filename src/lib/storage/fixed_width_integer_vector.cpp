@@ -28,6 +28,6 @@ AttributeVectorWidth FixedWidthIntegerVector<T>::width() const {
   return sizeof(T);
 }
 
-BOOST_PP_SEQ_FOR_EACH(EXPLICIT_INSTANTIATION, FixedWidthIntegerVector, (uint8_t)(u_int16_t)(u_int32_t))
+BOOST_PP_SEQ_FOR_EACH(EXPLICIT_INSTANTIATION, FixedWidthIntegerVector, (uint8_t)(uint16_t)(uint32_t))
 
 }  // namespace opossum

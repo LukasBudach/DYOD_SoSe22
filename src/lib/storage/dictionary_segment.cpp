@@ -9,20 +9,6 @@ namespace opossum {
 
 template <typename T>
 DictionarySegment<T>::DictionarySegment(const std::shared_ptr<AbstractSegment>& abstract_segment) {
-  // auto unique_values = std::unordered_set<T>{};
-  // const auto& segment_size = abstract_segment->size();
-
-  // for (auto value_index = ChunkOffset{0}; value_index < segment_size; ++value_index) {
-  //   const auto& raw_value = type_cast<T>(abstract_segment->operator[](value_index));
-
-  //   // if value was unseen, it can be inserted into the set -> we know it is a new unique value
-  //   auto was_unseen = unique_values.insert(raw_value).second;
-  //   if (was_unseen) {
-  //     _dictionary.push_back(raw_value);
-  //   }
-  //   _attribute_vector->set(value_index, get_encoded_value(raw_value));
-  // }
-
   for (auto index = ChunkOffset{0}; index < abstract_segment->size(); index++) {
     const auto& value = type_cast<T>(abstract_segment->operator[](index));
     _dictionary.push_back(value);
@@ -51,11 +37,7 @@ DictionarySegment<T>::DictionarySegment(const std::shared_ptr<AbstractSegment>& 
   // encode segment
   for (auto index = ChunkOffset{0}; index < abstract_segment->size(); ++index) {
     const auto& value = type_cast<T>(abstract_segment->operator[](index));
-    const auto& target_it = std::lower_bound(begin(_dictionary), end(_dictionary), value);
-
-    const auto encoding = static_cast<ValueID>(target_it - _dictionary.begin());
-    // TODO: prev 2 lines same as: const auto encoding = get_encoded_vale(value);
-    _attribute_vector->set(index, encoding);
+    _attribute_vector->set(index, get_encoded_value(value));
   }
 }
 
@@ -63,8 +45,6 @@ template <typename T>
 const ValueID DictionarySegment<T>::get_encoded_value(const T& raw_value) const{
   // "lower_bound" is more efficient than "find" and can be used as dictionary is sorted & immutable
   const auto target_it = std::lower_bound(_dictionary.begin(), _dictionary.end(), raw_value);
-  // TODO: Can this assertion be even wrong?
-  Assert(target_it != _dictionary.end(), "The value was not found for encoding.");
   return static_cast<ValueID>(std::distance(_dictionary.begin(), target_it));
 }
 
