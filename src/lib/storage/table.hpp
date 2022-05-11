@@ -75,6 +75,7 @@ class Table : private Noncopyable {
   ChunkOffset _target_chunk_size{};
   std::vector<std::string> _column_names{};
   std::vector<std::string> _column_types{};
+  mutable std::mutex _chunk_exchange_mutex{};
 };
 
 }  // namespace opossum

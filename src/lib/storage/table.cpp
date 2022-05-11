@@ -24,6 +24,7 @@ Table::Table(const ChunkOffset target_chunk_size) : _target_chunk_size{target_ch
 void Table::add_column(const std::string& name, const std::string& type) {
   _column_names.push_back(name);
   _column_types.push_back(type);
+  // TODO: currently an issue with thread safety for _chunks - will no longer be after PR review of sprint 1 is addressed and merged
   for (const auto& chunk : _chunks) {
     resolve_data_type(type, [&](const auto data_type_t) {
       using ColumnDataType = typename decltype(data_type_t)::type;
@@ -49,6 +50,7 @@ void Table::create_new_chunk() {
       new_chunk->add_segment(std::make_shared<ValueSegment<ColumnDataType>>());
     });
   }
+  std::lock_guard<std::mutex> guard(_chunk_exchange_mutex);
   _chunks.push_back(new_chunk);
 }
 
@@ -78,30 +80,16 @@ const std::string& Table::column_name(const ColumnID column_id) const { return _
 
 const std::string& Table::column_type(const ColumnID column_id) const { return _column_types.at(column_id); }
 
-std::shared_ptr<Chunk> Table::get_chunk(ChunkID chunk_id) { return _chunks.at(chunk_id); }
-
-std::shared_ptr<const Chunk> Table::get_chunk(ChunkID chunk_id) const { return _chunks.at(chunk_id); }
-
-/*void Table::compress_chunk(const ChunkID chunk_id) {
-  const auto& raw_chunk = get_chunk(chunk_id);  // get_chunk performs range check, so we are safe
-  auto compressed_chunk = std::make_shared<Chunk>();
-
-  // iterate over all columns (i.e. segments for the chunks)
-  for (auto column_index = ColumnID{0}; column_index < _column_types.size(); ++column_index) {
-    resolve_data_type(_column_types[column_index], [&](const auto data_type_t) {
-      // figure out the type of the segment
-      using ColumnDataType = typename decltype(data_type_t)::type;
-      // to the compressed chunk, add a dictionary-compressed segment based on the raw segment for this column
-      compressed_chunk->add_segment(std::make_shared<DictionarySegment<ColumnDataType>>(raw_chunk->get_segment(column_index)));
-    });
-  }
-
-  // replace the pointer to the raw chunk with a pointer to the compressed chunk
-  // TODO: do we need to consider anything here in regards to the users accessing the raw chunk?
-  _chunks[chunk_id] = compressed_chunk;
-
+std::shared_ptr<Chunk> Table::get_chunk(ChunkID chunk_id) {
+  std::lock_guard<std::mutex> guard(_chunk_exchange_mutex);
+  return _chunks.at(chunk_id);
 }
-*/
+
+std::shared_ptr<const Chunk> Table::get_chunk(ChunkID chunk_id) const {
+  std::lock_guard<std::mutex> guard(_chunk_exchange_mutex);
+  return _chunks.at(chunk_id);
+}
+
 void Table::compress_chunk(const ChunkID chunk_id) {
   auto thread_pool = std::vector<std::thread>{_column_types.size()};
   const auto& raw_chunk = get_chunk(chunk_id);  // get_chunk performs range check, so we are safe
@@ -134,8 +122,18 @@ void Table::compress_chunk(const ChunkID chunk_id) {
     compressed_chunk->add_segment(compressed_segments[column_index]);
   }
 
+  std::lock_guard<std::mutex> guard(_chunk_exchange_mutex);
   // replace existing chunk with the new, compressed one
   _chunks[chunk_id] = compressed_chunk;
+  /*
+   * We currently believe the following is the case:
+   * The chunk at chunk_id is guaranteed to be full and therefore already immutable.
+   * Anyone who still has an old pointer to the uncompressed chunk still gets the same information as someone with a pointer to the compressed chunk.
+   * We ensure noone is trying to get this chunk while we exchange the pointer through the _chunk_exchange_mutex.
+   *
+   * Therefore, simply setting the pointer new and letting the shared_pointer do the cleanup once nobody is looking at
+   * the old, uncompressed chunk anymore should be safe.
+   */
 }
 
 }  // namespace opossum

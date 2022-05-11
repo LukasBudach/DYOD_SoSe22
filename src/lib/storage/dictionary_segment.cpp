@@ -43,7 +43,10 @@ DictionarySegment<T>::DictionarySegment(const std::shared_ptr<AbstractSegment>& 
 
 template <typename T>
 const ValueID DictionarySegment<T>::get_encoded_value(const T& raw_value) const{
-  // "lower_bound" is more efficient than "find" and can be used as dictionary is sorted & immutable
+  /* "lower_bound" is more efficient than "find" and can be used as dictionary is sorted & immutable
+   * "lower_bound" would return a valid pointer to an element smaller than raw_value if raw_value is not in _dictionary,
+   * however, we are certain that any time this function is called, we only call it with a raw_value in _dictionary
+   */
   const auto target_it = std::lower_bound(_dictionary.begin(), _dictionary.end(), raw_value);
   return static_cast<ValueID>(std::distance(_dictionary.begin(), target_it));
 }
