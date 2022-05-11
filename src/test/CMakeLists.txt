@@ -42,11 +42,11 @@ set(
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 # Configure hyriseTest
-add_executable(hyriseTest ${HYRISE_TEST_SOURCES})
+add_executable(hyriseTest ${HYRISE_TEST_SOURCES} storage/fixed_width_integer_vector_test.cpp)
 target_link_libraries(hyriseTest hyrise ${LIBRARIES})
 
 # Configure hyriseCoverageApp
-add_executable(hyriseCoverage EXCLUDE_FROM_ALL ${HYRISE_TEST_SOURCES})
+add_executable(hyriseCoverage EXCLUDE_FROM_ALL ${HYRISE_TEST_SOURCES} storage/fixed_width_integer_vector_test.cpp)
 target_link_libraries(hyriseCoverage hyriseCoverageLib ${LIBRARIES} --coverage)
 set_target_properties(hyriseCoverage PROPERTIES COMPILE_FLAGS "-fprofile-arcs -ftest-coverage")
 
