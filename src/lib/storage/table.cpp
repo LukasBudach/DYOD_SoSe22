@@ -82,7 +82,7 @@ std::shared_ptr<Chunk> Table::get_chunk(ChunkID chunk_id) { return _chunks.at(ch
 
 std::shared_ptr<const Chunk> Table::get_chunk(ChunkID chunk_id) const { return _chunks.at(chunk_id); }
 
-void Table::compress_chunk(const ChunkID chunk_id) {
+/*void Table::compress_chunk(const ChunkID chunk_id) {
   const auto& raw_chunk = get_chunk(chunk_id);  // get_chunk performs range check, so we are safe
   auto compressed_chunk = std::make_shared<Chunk>();
 
@@ -100,6 +100,40 @@ void Table::compress_chunk(const ChunkID chunk_id) {
   // TODO: do we need to consider anything here in regards to the users accessing the raw chunk?
   _chunks[chunk_id] = compressed_chunk;
 
+}
+*/
+void Table::compress_chunk(const ChunkID chunk_id) {
+  auto thread_pool = std::vector<std::thread>{_column_types.size()};
+  const auto& raw_chunk = get_chunk(chunk_id);  // get_chunk performs range check, so we are safe
+  auto compressed_chunk = std::make_shared<Chunk>();
+  auto compressed_segments = std::unordered_map<std::string, std::shared_ptr<AbstractSegment>>{};
+
+  auto compress_segment = [&](const auto segment_type, const auto column_index) {
+    resolve_data_type(segment_type, [&](const auto data_type_t) {
+      // figure out the type of the segment
+      using ColumnDataType = typename decltype(data_type_t)::type;
+      // add compressed segment to the map of segment (column) name to segment to later add to chunk in correct order
+      compressed_segments.insert(std::pair{_column_names[column_index], std::make_shared<DictionarySegment<ColumnDataType>>(raw_chunk->get_segment(column_index))});
+    });
+  };
+
+  // create one worker per segment, they will start running the moment they are created
+  for (auto column_index = ColumnID{0}; column_index < _column_types.size(); ++column_index) {
+    thread_pool[column_index] = std::thread(compress_segment, _column_types[column_index], column_index);
+  }
+
+  // wait for all threads to finish execution
+  for (auto&& thread : thread_pool) {
+    thread.join();
+  }
+
+  // add the compressed segments to the chunk in correct order
+  for (const auto& column_name : _column_names) {
+    compressed_chunk->add_segment(compressed_segments.at(column_name));
+  }
+
+  // replace existing chunk with the new, compressed one
+  _chunks[chunk_id] = compressed_chunk;
 }
 
 }  // namespace opossum

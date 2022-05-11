@@ -28,14 +28,18 @@ DictionarySegment<T>::DictionarySegment(const std::shared_ptr<AbstractSegment>& 
     _dictionary.push_back(value);
   }
 
+  // use standard library functions to remove duplicate values from dictionary
+  // sorted dictionary also allows us to be more efficient in element lookup
   std::sort(begin(_dictionary), end(_dictionary));
   const auto& end_it = std::unique(begin(_dictionary), end(_dictionary));
   _dictionary.erase(end_it, _dictionary.end());
   _dictionary.shrink_to_fit();
 
+  // determine how many bits are needed to encode based on dictionary size
   const auto num_bits = std::ceil(std::log2(_dictionary.size()));
   Assert(num_bits <= 32, "The dictionary is too large for this compression algorithm!");
 
+  // initialize attribute vector with smallest applicable integer type
   if (num_bits <= 8) {
     _attribute_vector = std::make_shared<FixedWidthIntegerVector<uint8_t>>();
   } else if (num_bits <= 16) {
@@ -44,21 +48,24 @@ DictionarySegment<T>::DictionarySegment(const std::shared_ptr<AbstractSegment>& 
     _attribute_vector = std::make_shared<FixedWidthIntegerVector<uint32_t>>();
   }
 
-  for (auto index = ChunkOffset{0}; index < abstract_segment->size(); index++) {
+  // encode segment
+  for (auto index = ChunkOffset{0}; index < abstract_segment->size(); ++index) {
     const auto& value = type_cast<T>(abstract_segment->operator[](index));
-    const auto& target_it = std::find(begin(_dictionary), end(_dictionary), value);
+    const auto& target_it = std::lower_bound(begin(_dictionary), end(_dictionary), value);
 
     const auto encoding = static_cast<ValueID>(target_it - _dictionary.begin());
+    // TODO: prev 2 lines same as: const auto encoding = get_encoded_vale(value);
     _attribute_vector->set(index, encoding);
   }
 }
 
 template <typename T>
 const ValueID DictionarySegment<T>::get_encoded_value(const T& raw_value) const{
-  const auto value_index = std::find(_dictionary.begin(), _dictionary.end(), raw_value);
-  // Can this assertion be even wrong?
-  Assert(value_index != _dictionary.end(), "The value was not found for encoding.");
-  return static_cast<ValueID>(std::distance(_dictionary.begin(), value_index));
+  // "lower_bound" is more efficient than "find" and can be used as dictionary is sorted & immutable
+  const auto target_it = std::lower_bound(_dictionary.begin(), _dictionary.end(), raw_value);
+  // TODO: Can this assertion be even wrong?
+  Assert(target_it != _dictionary.end(), "The value was not found for encoding.");
+  return static_cast<ValueID>(std::distance(_dictionary.begin(), target_it));
 }
 
 template <typename T>
@@ -99,7 +106,7 @@ ValueID DictionarySegment<T>::lower_bound(const T value) const {
     return INVALID_VALUE_ID;
   }
 
-  return static_cast<ValueID>(target_it - _dictionary.begin());
+  return static_cast<ValueID>(std::distance(_dictionary.begin(), target_it));
 }
 
 template <typename T>
@@ -115,7 +122,7 @@ ValueID DictionarySegment<T>::upper_bound(const T value) const {
     return INVALID_VALUE_ID;
   }
 
-  return static_cast<ValueID>(target_it - _dictionary.begin());
+  return static_cast<ValueID>(std::distance(_dictionary.begin(), target_it));
 }
 
 template <typename T>
