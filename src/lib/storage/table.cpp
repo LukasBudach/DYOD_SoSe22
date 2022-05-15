@@ -24,6 +24,8 @@ Table::Table(const ChunkOffset target_chunk_size) : _target_chunk_size{target_ch
 void Table::add_column(const std::string& name, const std::string& type) {
   _column_names.push_back(name);
   _column_types.push_back(type);
+
+  auto guard = std::lock_guard<std::mutex>(_chunk_exchange_mutex);
   // TODO: currently an issue with thread safety for _chunks - will no longer be after PR review of sprint 1 is addressed and merged
   for (const auto& chunk : _chunks) {
     resolve_data_type(type, [&](const auto data_type_t) {
@@ -34,15 +36,17 @@ void Table::add_column(const std::string& name, const std::string& type) {
 }
 
 void Table::append(const std::vector<AllTypeVariant>& values) {
+  auto guard = std::lock_guard<std::mutex>(_chunk_exchange_mutex);
   // if current chunk size is maxed out, create a new chunk, adding as many segments as we have columns
   if (_chunks.back()->size() >= target_chunk_size()) {
-    create_new_chunk();
+    // Since we already hold the lock on the _chunks vector, we call the unsafe function here to avoid deadlock.
+    _create_new_chunk_unsafe();
   }
 
   _chunks.back()->append(values);
 }
 
-void Table::create_new_chunk() {
+void Table::_create_new_chunk_unsafe() {
   auto new_chunk = std::make_shared<Chunk>();
   for (const auto& column_type : _column_types) {
     resolve_data_type(column_type, [&](const auto data_type_t) {
@@ -50,21 +54,30 @@ void Table::create_new_chunk() {
       new_chunk->add_segment(std::make_shared<ValueSegment<ColumnDataType>>());
     });
   }
-  std::lock_guard<std::mutex> guard(_chunk_exchange_mutex);
   _chunks.push_back(new_chunk);
+}
+
+void Table::create_new_chunk() {
+  auto guard = std::lock_guard<std::mutex>(_chunk_exchange_mutex);
+  _create_new_chunk_unsafe();
 }
 
 ColumnCount Table::column_count() const { return static_cast<ColumnCount>(_column_names.size()); }
 
 ChunkOffset Table::row_count() const {
   auto total_rows = ChunkOffset{0};
+  auto guard = std::lock_guard<std::mutex>(_chunk_exchange_mutex);
+
   for (const auto& chunk : _chunks) {
     total_rows += chunk->size();
   }
   return total_rows;
 }
 
-ChunkID Table::chunk_count() const { return static_cast<ChunkID>(_chunks.size()); }
+ChunkID Table::chunk_count() const {
+  auto guard = std::lock_guard<std::mutex>(_chunk_exchange_mutex);
+  return static_cast<ChunkID>(_chunks.size());
+}
 
 ColumnID Table::column_id_by_name(const std::string& column_name) const {
   auto column_name_location = std::find(column_names().begin(), column_names().end(), column_name);
@@ -81,12 +94,12 @@ const std::string& Table::column_name(const ColumnID column_id) const { return _
 const std::string& Table::column_type(const ColumnID column_id) const { return _column_types.at(column_id); }
 
 std::shared_ptr<Chunk> Table::get_chunk(ChunkID chunk_id) {
-  std::lock_guard<std::mutex> guard(_chunk_exchange_mutex);
+  auto guard = std::lock_guard<std::mutex>(_chunk_exchange_mutex);
   return _chunks.at(chunk_id);
 }
 
 std::shared_ptr<const Chunk> Table::get_chunk(ChunkID chunk_id) const {
-  std::lock_guard<std::mutex> guard(_chunk_exchange_mutex);
+  auto guard = std::lock_guard<std::mutex>(_chunk_exchange_mutex);
   return _chunks.at(chunk_id);
 }
 
@@ -101,7 +114,7 @@ void Table::compress_chunk(const ChunkID chunk_id) {
     resolve_data_type(segment_type, [&](const auto data_type_t) {
       // figure out the type of the segment
       using ColumnDataType = typename decltype(data_type_t)::type;
-      std::lock_guard<std::mutex> guard(segments_vec_mutex);
+      auto guard = std::lock_guard<std::mutex>(segments_vec_mutex);
       // add compressed segment to the map of segment (column) name to segment to later add to chunk in correct order
       compressed_segments[column_index] = std::make_shared<DictionarySegment<ColumnDataType>>(raw_chunk->get_segment(column_index));
     });
@@ -122,7 +135,7 @@ void Table::compress_chunk(const ChunkID chunk_id) {
     compressed_chunk->add_segment(compressed_segments[column_index]);
   }
 
-  std::lock_guard<std::mutex> guard(_chunk_exchange_mutex);
+  auto guard = std::lock_guard<std::mutex>(_chunk_exchange_mutex);
   // replace existing chunk with the new, compressed one
   _chunks[chunk_id] = compressed_chunk;
   /*
