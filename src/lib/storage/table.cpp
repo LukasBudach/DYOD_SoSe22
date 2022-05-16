@@ -22,8 +22,9 @@ namespace opossum {
 Table::Table(const ChunkOffset target_chunk_size) : _target_chunk_size{target_chunk_size} { create_new_chunk(); }
 
 void Table::add_column(const std::string& name, const std::string& type) {
-  auto guard = std::lock_guard<std::mutex>(_chunk_exchange_mutex);
-  Assert(row_count() == 0, "You can only add a new column to an empty table.");
+  auto guard = std::lock_guard<std::mutex>(_chunk_access_mutex);
+  // can't use row_count function here, as it will also get a lock, running us into a deadlock
+  Assert((_chunks.size() == 1) && (_chunks.back()->size() == 0), "You can only add a new column to an empty table.");
   _column_names.push_back(name);
   _column_types.push_back(type);
   // we can add the column to only the last chunk we know, as it should be the only one
@@ -35,7 +36,7 @@ void Table::add_column(const std::string& name, const std::string& type) {
 }
 
 void Table::append(const std::vector<AllTypeVariant>& values) {
-  auto guard = std::lock_guard<std::mutex>(_chunk_exchange_mutex);
+  auto guard = std::lock_guard<std::mutex>(_chunk_access_mutex);
   // if current chunk size is maxed out, create a new chunk, adding as many segments as we have columns
   if (_chunks.back()->size() >= target_chunk_size()) {
     // Since we already hold the lock on the _chunks vector, we call the unsafe function here to avoid deadlock.
@@ -57,7 +58,7 @@ void Table::_create_new_chunk_unsafe() {
 }
 
 void Table::create_new_chunk() {
-  auto guard = std::lock_guard<std::mutex>(_chunk_exchange_mutex);
+  auto guard = std::lock_guard<std::mutex>(_chunk_access_mutex);
   _create_new_chunk_unsafe();
 }
 
@@ -65,7 +66,7 @@ ColumnCount Table::column_count() const { return static_cast<ColumnCount>(_colum
 
 ChunkOffset Table::row_count() const {
   auto total_rows = ChunkOffset{0};
-  auto guard = std::lock_guard<std::mutex>(_chunk_exchange_mutex);
+  auto guard = std::lock_guard<std::mutex>(_chunk_access_mutex);
 
   for (const auto& chunk : _chunks) {
     total_rows += chunk->size();
@@ -74,7 +75,7 @@ ChunkOffset Table::row_count() const {
 }
 
 ChunkID Table::chunk_count() const {
-  auto guard = std::lock_guard<std::mutex>(_chunk_exchange_mutex);
+  auto guard = std::lock_guard<std::mutex>(_chunk_access_mutex);
   return static_cast<ChunkID>(_chunks.size());
 }
 
@@ -93,12 +94,12 @@ const std::string& Table::column_name(const ColumnID column_id) const { return _
 const std::string& Table::column_type(const ColumnID column_id) const { return _column_types.at(column_id); }
 
 std::shared_ptr<Chunk> Table::get_chunk(ChunkID chunk_id) {
-  auto guard = std::lock_guard<std::mutex>(_chunk_exchange_mutex);
+  auto guard = std::lock_guard<std::mutex>(_chunk_access_mutex);
   return _chunks.at(chunk_id);
 }
 
 std::shared_ptr<const Chunk> Table::get_chunk(ChunkID chunk_id) const {
-  auto guard = std::lock_guard<std::mutex>(_chunk_exchange_mutex);
+  auto guard = std::lock_guard<std::mutex>(_chunk_access_mutex);
   return _chunks.at(chunk_id);
 }
 
@@ -134,14 +135,14 @@ void Table::compress_chunk(const ChunkID chunk_id) {
     compressed_chunk->add_segment(compressed_segments[column_index]);
   }
 
-  auto guard = std::lock_guard<std::mutex>(_chunk_exchange_mutex);
+  auto guard = std::lock_guard<std::mutex>(_chunk_access_mutex);
   // replace existing chunk with the new, compressed one
   _chunks[chunk_id] = compressed_chunk;
   /*
    * We currently believe the following is the case:
    * The chunk at chunk_id is guaranteed to be full and therefore already immutable.
    * Anyone who still has an old pointer to the uncompressed chunk still gets the same information as someone with a pointer to the compressed chunk.
-   * We ensure noone is trying to get this chunk while we exchange the pointer through the _chunk_exchange_mutex.
+   * We ensure noone is trying to get this chunk while we exchange the pointer through the _chunk_access_mutex.
    *
    * Therefore, simply setting the pointer new and letting the shared_pointer do the cleanup once nobody is looking at
    * the old, uncompressed chunk anymore should be safe.
