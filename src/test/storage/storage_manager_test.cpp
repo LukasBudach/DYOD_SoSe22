@@ -53,9 +53,11 @@ TEST_F(StorageStorageManagerTest, HasTable) {
 TEST_F(StorageStorageManagerTest, TableNames) {
   auto& storage_manager = StorageManager::get();
   auto expected_tables = std::vector<std::string>{"first_table", "second_table"};
-  // the return vector is supposed to be sorted, so sort this expected values vector as well to ensure consistency
+  auto manager_table_names = storage_manager.table_names();
+  // since the return vector could be unsorted, we sort both vectors here to ensure we can properly compare them
   std::sort(expected_tables.begin(), expected_tables.end());
-  EXPECT_EQ(storage_manager.table_names(), expected_tables);
+  std::sort(manager_table_names.begin(), manager_table_names.end());
+  EXPECT_EQ(manager_table_names, expected_tables);
 }
 
 TEST_F(StorageStorageManagerTest, PrintTableInfo) {

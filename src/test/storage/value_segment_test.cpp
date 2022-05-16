@@ -68,7 +68,6 @@ TEST_F(StorageValueSegmentTest, ArrayAccess) {
 
   EXPECT_EQ(int_value_segment[0], AllTypeVariant(1));
   EXPECT_EQ(int_value_segment[1], AllTypeVariant(2));
-  EXPECT_THROW(int_value_segment[2], std::exception);
 }
 
 }  // namespace opossum

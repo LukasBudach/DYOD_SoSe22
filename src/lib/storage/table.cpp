@@ -21,14 +21,15 @@ namespace opossum {
 Table::Table(const ChunkOffset target_chunk_size) : _target_chunk_size{target_chunk_size} { create_new_chunk(); }
 
 void Table::add_column(const std::string& name, const std::string& type) {
+  Assert(row_count() == 0, "You can only add a new column to an empty table.");
   _column_names.push_back(name);
   _column_types.push_back(type);
-  for (const auto& chunk : _chunks) {
-    resolve_data_type(type, [&](const auto data_type_t) {
-      using ColumnDataType = typename decltype(data_type_t)::type;
-      chunk->add_segment(std::make_shared<ValueSegment<ColumnDataType>>());
-    });
-  }
+  // we can add the column to only the last chunk we know, as it should be the only one
+  // even if there are multiple empty chunks, we would only ever start filling the last one, so ignore all others here
+  resolve_data_type(type, [&](const auto data_type_t) {
+    using ColumnDataType = typename decltype(data_type_t)::type;
+    _chunks.back()->add_segment(std::make_shared<ValueSegment<ColumnDataType>>());
+  });
 }
 
 void Table::append(const std::vector<AllTypeVariant>& values) {

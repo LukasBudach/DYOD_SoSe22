@@ -37,22 +37,20 @@ std::vector<std::string> StorageManager::table_names() const {
     table_names.push_back(table.first);
   }
 
-  // overhead added by the usage of an unordered_map, mainly needed to ensure an order for testing
-  std::sort(table_names.begin(), table_names.end());
-
   return table_names;
 }
 
 void StorageManager::print(std::ostream& out) const {
-  // getting a vector of sorted table names is again an overhead due to the usage of an unordered_map mainly for testing
-  auto table_names_sorted = table_names();
-  for (const auto& table_name : table_names_sorted) {
+  auto sorted_table_names = table_names();
+  // sort the vector of table names, both for better user output (sorted vs randomly ordered tables) and for easy tests
+  std::sort(sorted_table_names.begin(), sorted_table_names.end());
+  for (const auto& table_name : sorted_table_names) {
     auto table = get_table(table_name);
     out << "Table Name: " << table_name << "\t# Columns: " << table->column_count()
         << "\t# Rows: " << table->row_count() << "\t# Chunks: " << table->chunk_count() << "\n";
   }
 }
 
-void StorageManager::reset() { _tables.clear(); }
+void StorageManager::reset() { StorageManager::get() = StorageManager{}; }
 
 }  // namespace opossum
