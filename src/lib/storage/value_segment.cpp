@@ -14,7 +14,7 @@ namespace opossum {
 
 template <typename T>
 AllTypeVariant ValueSegment<T>::operator[](const ChunkOffset chunk_offset) const {
-  return _stored_values.at(chunk_offset);
+  return _stored_values[chunk_offset];
 }
 
 template <typename T>
