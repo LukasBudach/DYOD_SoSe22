@@ -24,7 +24,7 @@ void Chunk::append(const std::vector<AllTypeVariant>& values) {
   Assert(values.size() == n_columns, "The row you're trying to insert does not match the number of columns expected.");
 
   for (auto column_index = ColumnCount{0}; column_index < n_columns; ++column_index) {
-    _segments[column_index]->append(values[column_index]);
+    _segments[column_index]->append(values.at(column_index));
   }
 }
 
@@ -36,7 +36,7 @@ ChunkOffset Chunk::size() const {
   if (_segments.empty()) {
     return 0;
   } else {
-    return _segments.front()->size();
+    return _segments[0]->size();
   }
 }
 

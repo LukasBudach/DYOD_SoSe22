@@ -82,7 +82,7 @@ ChunkID Table::chunk_count() const {
 ColumnID Table::column_id_by_name(const std::string& column_name) const {
   auto column_name_location = std::find(column_names().begin(), column_names().end(), column_name);
   Assert(column_name_location != column_names().end(), "The given column name is not contained in the table.");
-  return static_cast<ColumnID>(std::distance(column_names().begin(), column_name_location));
+  return ColumnID{static_cast<ColumnID>(std::distance(column_names().begin(), column_name_location))};
 }
 
 ChunkOffset Table::target_chunk_size() const { return _target_chunk_size; }
