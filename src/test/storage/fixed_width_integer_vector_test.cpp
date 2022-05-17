@@ -7,8 +7,7 @@
 
 namespace opossum {
 
-class FixedWidthIntegerVectorTest : public BaseTest {
-};
+class FixedWidthIntegerVectorTest : public BaseTest {};
 
 TEST_F(FixedWidthIntegerVectorTest, SetOverwriteExisting) {
   auto vec = FixedWidthIntegerVector<uint8_t>{};
@@ -22,6 +21,5 @@ TEST_F(FixedWidthIntegerVectorTest, SetOverwriteExisting) {
   // Test attribute_vector size
   EXPECT_EQ(vec.get(1), ValueID{3});
 }
-
 
 }  // namespace opossum

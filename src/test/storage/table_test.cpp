@@ -8,9 +8,9 @@
 #include "gtest/gtest.h"
 
 #include "../lib/resolve_type.hpp"
+#include "../lib/storage/dictionary_segment.hpp"
 #include "../lib/storage/table.hpp"
 #include "../lib/storage/value_segment.hpp"
-#include "../lib/storage/dictionary_segment.hpp"
 
 namespace opossum {
 
@@ -91,7 +91,8 @@ TEST_F(StorageTableTest, CompressChunk) {
   table.append({6, "world"});
   table.append({3, "!"});
 
-  EXPECT_THROW(dynamic_cast<DictionarySegment<int32_t>&>(*table.get_chunk(ChunkID{0})->get_segment(ColumnID{0})), std::bad_cast);
+  EXPECT_THROW(dynamic_cast<DictionarySegment<int32_t>&>(*table.get_chunk(ChunkID{0})->get_segment(ColumnID{0})),
+               std::bad_cast);
 
   table.compress_chunk(ChunkID{0});
 

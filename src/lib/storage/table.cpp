@@ -110,13 +110,15 @@ void Table::compress_chunk(const ChunkID chunk_id) {
   auto compressed_segments = std::vector<std::shared_ptr<AbstractSegment>>{_column_types.size()};
   auto segments_vec_mutex = std::mutex{};
 
-  auto compress_segment = [&raw_chunk, &compressed_segments, &segments_vec_mutex](const auto segment_type, const auto column_index) {
+  auto compress_segment = [&raw_chunk, &compressed_segments, &segments_vec_mutex](const auto segment_type,
+                                                                                  const auto column_index) {
     resolve_data_type(segment_type, [&](const auto data_type_t) {
       // figure out the type of the segment
       using ColumnDataType = typename decltype(data_type_t)::type;
       auto guard = std::lock_guard<std::mutex>(segments_vec_mutex);
       // add compressed segment to the map of segment (column) name to segment to later add to chunk in correct order
-      compressed_segments[column_index] = std::make_shared<DictionarySegment<ColumnDataType>>(raw_chunk->get_segment(column_index));
+      compressed_segments[column_index] =
+          std::make_shared<DictionarySegment<ColumnDataType>>(raw_chunk->get_segment(column_index));
     });
   };
 
