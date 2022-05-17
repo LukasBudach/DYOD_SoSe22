@@ -53,14 +53,12 @@ const ValueID DictionarySegment<T>::get_encoded_value(const T& raw_value) const 
 
 template <typename T>
 AllTypeVariant DictionarySegment<T>::operator[](const ChunkOffset chunk_offset) const {
-  const auto encoding = _attribute_vector->get(chunk_offset);
-  return _dictionary[encoding];
+  return _dictionary[_attribute_vector->get(chunk_offset)];
 }
 
 template <typename T>
 T DictionarySegment<T>::get(const ChunkOffset chunk_offset) const {
-  const auto encoding = _attribute_vector->get(chunk_offset);
-  return value_of_value_id(_attribute_vector->get(encoding));
+  return value_of_value_id(_attribute_vector->get(chunk_offset));
 }
 
 template <typename T>
