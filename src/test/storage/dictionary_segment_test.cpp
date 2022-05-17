@@ -72,8 +72,6 @@ TEST_F(StorageDictionarySegmentTest, LowerUpperBound) {
   EXPECT_EQ(dict_segment->upper_bound(15), INVALID_VALUE_ID);
 }
 
-// TODO(student): You should add some more tests here (full coverage would be appreciated) and possibly in other files.
-
 TEST_F(StorageDictionarySegmentTest, DirectValueAccess) {
   std::shared_ptr<AbstractSegment> segment;
   resolve_data_type("int", [&](auto type) {
