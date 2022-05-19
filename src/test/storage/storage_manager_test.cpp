@@ -50,4 +50,26 @@ TEST_F(StorageStorageManagerTest, HasTable) {
   EXPECT_EQ(storage_manager.has_table("first_table"), true);
 }
 
+TEST_F(StorageStorageManagerTest, TableNames) {
+  auto& storage_manager = StorageManager::get();
+  auto expected_tables = std::vector<std::string>{"first_table", "second_table"};
+  auto manager_table_names = storage_manager.table_names();
+  // since the return vector could be unsorted, we sort both vectors here to ensure we can properly compare them
+  std::sort(expected_tables.begin(), expected_tables.end());
+  std::sort(manager_table_names.begin(), manager_table_names.end());
+  EXPECT_EQ(manager_table_names, expected_tables);
+}
+
+TEST_F(StorageStorageManagerTest, PrintTableInfo) {
+  auto& storage_manager = StorageManager::get();
+  auto stream = std::stringstream{};
+
+  // this is assuming the expected sorting from the StorageManager::table_names() function
+  auto expected_print = std::string{
+      "Table Name: first_table\t# Columns: 0\t# Rows: 0\t# Chunks: 1\nTable Name: "
+      "second_table\t# Columns: 0\t# Rows: 0\t# Chunks: 1\n"};
+  storage_manager.print(stream);
+  EXPECT_EQ(stream.str(), expected_print);
+}
+
 }  // namespace opossum

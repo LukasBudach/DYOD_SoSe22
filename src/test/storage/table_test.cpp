@@ -41,6 +41,19 @@ TEST_F(StorageTableTest, GetChunk) {
   EXPECT_THROW(table.get_chunk(ChunkID{7}), std::exception);
 }
 
+TEST_F(StorageTableTest, ConstGetChunk) {
+  table.get_chunk(ChunkID{0});
+  table.append({4, "Hello,"});
+  table.append({6, "world"});
+  table.append({3, "!"});
+  table.get_chunk(ChunkID{1});
+
+  const auto& const_table = table;
+  const auto chunk = const_table.get_chunk(ChunkID{0});
+  EXPECT_EQ(chunk->size(), 2);
+  EXPECT_THROW(table.get_chunk(ChunkID{7}), std::exception);
+}
+
 TEST_F(StorageTableTest, ColumnCount) { EXPECT_EQ(table.column_count(), 2u); }
 
 TEST_F(StorageTableTest, RowCount) {
