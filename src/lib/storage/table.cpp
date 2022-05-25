@@ -30,6 +30,9 @@ void Table::add_column(const std::string& name, const std::string& type) {
     using ColumnDataType = typename decltype(data_type_t)::type;
     _chunks.back()->add_segment(std::make_shared<ValueSegment<ColumnDataType>>());
   });
+
+void Table::add_column_definition(const std::string& name, const std::string& type) {
+  // Implementation goes here
 }
 
 void Table::append(const std::vector<AllTypeVariant>& values) {
