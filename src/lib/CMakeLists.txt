@@ -2,6 +2,14 @@
 set(
     SOURCES
     all_type_variant.hpp
+    operators/abstract_operator.cpp
+    operators/abstract_operator.hpp
+    operators/get_table.hpp
+    operators/print.cpp
+    operators/print.hpp
+    operators/table_scan.hpp
+    operators/table_wrapper.cpp
+    operators/table_wrapper.hpp
     resolve_type.hpp
     storage/abstract_attribute_vector.hpp
     storage/abstract_segment.hpp
@@ -11,6 +19,7 @@ set(
     storage/dictionary_segment.hpp
     storage/fixed_width_integer_vector.cpp
     storage/fixed_width_integer_vector.hpp
+    storage/reference_segment.hpp
     storage/storage_manager.cpp
     storage/storage_manager.hpp
     storage/table.cpp
