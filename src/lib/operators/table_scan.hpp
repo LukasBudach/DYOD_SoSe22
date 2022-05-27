@@ -28,6 +28,7 @@ class TableScan : public AbstractOperator {
 
  protected:
   std::shared_ptr<const Table> _on_execute() override;
+  // void _filter(AllTypeVariant given_value, AllTypeVariant search_value, std::shared_ptr<std::vector<RowID>> pos_list, ChunkID chunk_index, ChunkOffset value_index, auto type);
 
   const std::shared_ptr<const AbstractOperator> _in{};
   const ColumnID _column_id{};
