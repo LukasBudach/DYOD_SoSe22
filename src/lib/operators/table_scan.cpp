@@ -136,7 +136,7 @@ std::shared_ptr<const Table> TableScan::_on_execute() {
               case ScanType::OpEquals: {
                 // done here, no matching values if operator == Equal
                 auto search_encoding_it = std::lower_bound(begin(dict), end(dict), typed_search_value);
-                if (search_encoding_it == dict.end() || *search_encoding_it != typed_search_value) {
+                if (search_encoding_it == dict.end()) {
                     break;
                 }
                 const auto search_encoding = search_encoding_it - dict.begin();
