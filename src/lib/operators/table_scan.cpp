@@ -136,6 +136,9 @@ std::shared_ptr<const Table> TableScan::_on_execute() {
               case ScanType::OpEquals: {
                 // done here, no matching values if operator == Equal
                 auto search_encoding_it = std::lower_bound(begin(dict), end(dict), typed_search_value);
+                if (search_encoding_it == dict.end() || *search_encoding_it != typed_search_value) {
+                    break;
+                }
                 const auto search_encoding = search_encoding_it - dict.begin();
 
                 if (attr_vector->get(pos_index.chunk_offset) == search_encoding) {
@@ -149,7 +152,7 @@ std::shared_ptr<const Table> TableScan::_on_execute() {
                 auto search_encoding_it = std::lower_bound(begin(dict), end(dict), typed_search_value);
                 const auto search_encoding = search_encoding_it - dict.begin();
 
-                if (attr_vector->get(pos_index.chunk_offset) != search_encoding) {
+                if (search_encoding_it == dict.end() || attr_vector->get(pos_index.chunk_offset) != search_encoding) {
                     pos_list->push_back(pos_index);
                 }
                 break;
@@ -158,7 +161,7 @@ std::shared_ptr<const Table> TableScan::_on_execute() {
                 auto search_encoding_it = std::lower_bound(begin(dict), end(dict), typed_search_value);
                 const auto search_encoding = search_encoding_it - dict.begin();
 
-                if (attr_vector->get(pos_index.chunk_offset) < search_encoding) {
+                if (search_encoding_it == dict.end() || attr_vector->get(pos_index.chunk_offset) < search_encoding) {
                     pos_list->push_back(pos_index);
                 }
                 break;
@@ -181,6 +184,9 @@ std::shared_ptr<const Table> TableScan::_on_execute() {
                 //   // compare to all values with leq as this value is already less than search value
                 // }
                 auto search_encoding_it = std::upper_bound(begin(dict), end(dict), typed_search_value);
+                if (search_encoding_it == dict.begin()) {
+                    break;
+                }
                 search_encoding_it --;
                 const auto search_encoding = search_encoding_it - dict.begin();
 
@@ -191,6 +197,9 @@ std::shared_ptr<const Table> TableScan::_on_execute() {
               }
               case ScanType::OpGreaterThan: {
                 auto search_encoding_it = std::upper_bound(begin(dict), end(dict), typed_search_value);
+                if (search_encoding_it == dict.end()) {
+                    break;
+                }
                 const auto search_encoding = search_encoding_it - dict.begin();
 
                 if (attr_vector->get(pos_index.chunk_offset) >= search_encoding) {
@@ -216,6 +225,9 @@ std::shared_ptr<const Table> TableScan::_on_execute() {
                 // }
                 // break;
                 auto search_encoding_it = std::lower_bound(begin(dict), end(dict), typed_search_value);
+                if (search_encoding_it == dict.end()) {
+                    break;
+                }
                 const auto search_encoding = search_encoding_it - dict.begin();
 
                 if (attr_vector->get(pos_index.chunk_offset) >= search_encoding) {
@@ -250,7 +262,7 @@ std::shared_ptr<const Table> TableScan::_on_execute() {
           switch(_scan_type) {
               case ScanType::OpEquals: {
                   auto search_encoding_it = std::lower_bound(begin(dict), end(dict), type_cast<Type>(_search_value));
-                  if (*search_encoding_it != type_cast<Type>(_search_value)) {
+                  if (search_encoding_it == dict.end() || *search_encoding_it != type_cast<Type>(_search_value)) {
                       break;
                   }
                   const auto search_encoding = search_encoding_it - dict.begin();
@@ -266,6 +278,9 @@ std::shared_ptr<const Table> TableScan::_on_execute() {
 
               case ScanType::OpGreaterThan: {
                   auto search_encoding_it = std::upper_bound(begin(dict), end(dict), type_cast<Type>(_search_value));
+                  if (search_encoding_it == dict.end()) {
+                      break;
+                  }
                   const auto search_encoding = search_encoding_it - dict.begin();
 
                   const auto attr_vector_size = attr_vector->size();
@@ -279,6 +294,9 @@ std::shared_ptr<const Table> TableScan::_on_execute() {
 
               case ScanType::OpGreaterThanEquals: {
                   auto search_encoding_it = std::lower_bound(begin(dict), end(dict), type_cast<Type>(_search_value));
+                  if (search_encoding_it == dict.end()) {
+                      break;
+                  }
                   const auto search_encoding = search_encoding_it - dict.begin();
 
                   const auto attr_vector_size = attr_vector->size();
@@ -292,6 +310,13 @@ std::shared_ptr<const Table> TableScan::_on_execute() {
 
               case ScanType::OpLessThan: {
                   auto search_encoding_it = std::lower_bound(begin(dict), end(dict), type_cast<Type>(_search_value));
+                  if (search_encoding_it == dict.end()) {
+                      const auto attr_vector_size = attr_vector->size();
+                      for (auto attr_index = uint32_t{0}; attr_index < attr_vector_size; attr_index ++) {
+                          pos_list->push_back(RowID{chunk_index, attr_index});
+                      }
+                      break;
+                  }
                   const auto search_encoding = search_encoding_it - dict.begin();
 
                   const auto attr_vector_size = attr_vector->size();
@@ -305,6 +330,9 @@ std::shared_ptr<const Table> TableScan::_on_execute() {
 
               case ScanType::OpLessThanEquals: {
                   auto search_encoding_it = std::upper_bound(begin(dict), end(dict), type_cast<Type>(_search_value));
+                  if (search_encoding_it == dict.begin()) {
+                      break;
+                  }
                   search_encoding_it --;
                   const auto search_encoding = search_encoding_it - dict.begin();
 
@@ -319,7 +347,7 @@ std::shared_ptr<const Table> TableScan::_on_execute() {
 
               case ScanType::OpNotEquals: {
                   auto search_encoding_it = std::lower_bound(begin(dict), end(dict), type_cast<Type>(_search_value));
-                  if (*search_encoding_it != type_cast<Type>(_search_value)) {
+                  if (search_encoding_it == dict.end() || *search_encoding_it != type_cast<Type>(_search_value)) {
                       const auto attr_vector_size = attr_vector->size();
                       for (auto attr_index = uint32_t{0}; attr_index < attr_vector_size; attr_index ++) {
                           pos_list->push_back(RowID{chunk_index, attr_index});
