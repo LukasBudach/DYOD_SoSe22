@@ -200,7 +200,99 @@ std::shared_ptr<const Table> TableScan::_on_execute() {
         using Type = typename decltype(type)::type;
         const auto& dict_segment_ptr = std::dynamic_pointer_cast<DictionarySegment<Type>>(segment);
         if (dict_segment_ptr) {
-          const auto& values = dict_segment_ptr->attribute_vector();
+          const auto& dict = dict_segment_ptr->dictionary();
+          const auto& attr_vector = dict_segment_ptr->attribute_vector();
+
+          switch(_scan_type) {
+              case ScanType::OpEquals: {
+                  auto search_encoding_it = std::lower_bound(begin(dict), end(dict), type_cast<Type>(_search_value));
+                  if (*search_encoding_it != type_cast<Type>(_search_value)) {
+                      break;
+                  }
+                  const auto search_encoding = search_encoding_it - dict.begin();
+
+                  const auto attr_vector_size = attr_vector->size();
+                  for (auto attr_index = uint32_t{0}; attr_index < attr_vector_size; attr_index ++) {
+                      if (attr_vector->get(attr_index) == search_encoding) {
+                          pos_list->push_back(RowID{chunk_index, attr_index});
+                      }
+                  }
+                  break;
+              }
+
+              case ScanType::OpGreaterThan: {
+                  auto search_encoding_it = std::upper_bound(begin(dict), end(dict), type_cast<Type>(_search_value));
+                  const auto search_encoding = search_encoding_it - dict.begin();
+
+                  const auto attr_vector_size = attr_vector->size();
+                  for (auto attr_index = uint32_t{0}; attr_index < attr_vector_size; attr_index ++) {
+                      if (attr_vector->get(attr_index) >= search_encoding) {
+                          pos_list->push_back(RowID{chunk_index, attr_index});
+                      }
+                  }
+                  break;
+              }
+
+              case ScanType::OpGreaterThanEquals: {
+                  auto search_encoding_it = std::lower_bound(begin(dict), end(dict), type_cast<Type>(_search_value));
+                  const auto search_encoding = search_encoding_it - dict.begin();
+
+                  const auto attr_vector_size = attr_vector->size();
+                  for (auto attr_index = uint32_t{0}; attr_index < attr_vector_size; attr_index ++) {
+                      if (attr_vector->get(attr_index) >= search_encoding) {
+                          pos_list->push_back(RowID{chunk_index, attr_index});
+                      }
+                  }
+                  break;
+              }
+
+              case ScanType::OpLessThan: {
+                  auto search_encoding_it = std::lower_bound(begin(dict), end(dict), type_cast<Type>(_search_value));
+                  const auto search_encoding = search_encoding_it - dict.begin();
+
+                  const auto attr_vector_size = attr_vector->size();
+                  for (auto attr_index = uint32_t{0}; attr_index < attr_vector_size; attr_index ++) {
+                      if (attr_vector->get(attr_index) < search_encoding) {
+                          pos_list->push_back(RowID{chunk_index, attr_index});
+                      }
+                  }
+                  break;
+              }
+
+              case ScanType::OpLessThanEquals: {
+                  auto search_encoding_it = std::upper_bound(begin(dict), end(dict), type_cast<Type>(_search_value));
+                  search_encoding_it --;
+                  const auto search_encoding = search_encoding_it - dict.begin();
+
+                  const auto attr_vector_size = attr_vector->size();
+                  for (auto attr_index = uint32_t{0}; attr_index < attr_vector_size; attr_index ++) {
+                      if (attr_vector->get(attr_index) <= search_encoding) {
+                          pos_list->push_back(RowID{chunk_index, attr_index});
+                      }
+                  }
+                  break;
+              }
+
+              case ScanType::OpNotEquals: {
+                  auto search_encoding_it = std::lower_bound(begin(dict), end(dict), type_cast<Type>(_search_value));
+                  if (*search_encoding_it != type_cast<Type>(_search_value)) {
+                      const auto attr_vector_size = attr_vector->size();
+                      for (auto attr_index = uint32_t{0}; attr_index < attr_vector_size; attr_index ++) {
+                          pos_list->push_back(RowID{chunk_index, attr_index});
+                      }
+                      break;
+                  }
+                  const auto search_encoding = search_encoding_it - dict.begin();
+
+                  const auto attr_vector_size = attr_vector->size();
+                  for (auto attr_index = uint32_t{0}; attr_index < attr_vector_size; attr_index ++) {
+                      if (attr_vector->get(attr_index) != search_encoding) {
+                          pos_list->push_back(RowID{chunk_index, attr_index});
+                      }
+                  }
+                  break;
+              }
+          }
         } else {
           const auto& value_segment_ptr = std::dynamic_pointer_cast<ValueSegment<Type>>(segment);
           const auto& values = value_segment_ptr->values();
