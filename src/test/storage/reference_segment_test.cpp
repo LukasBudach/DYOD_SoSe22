@@ -97,7 +97,8 @@ TEST_F(ReferenceSegmentTest, EstimatedMemoryUsage) {
   // This is under the expectation of us only wanting to estimate the usage of the ReferenceSegment itself, not
   // any values it may point to
   // PosList with (0, 2), (1, 0), (1, 1)
-  auto pos_list = std::make_shared<PosList>(std::initializer_list<RowID>({RowID{ChunkID{0}, 2}, RowID{ChunkID{1}, 0}, RowID{ChunkID{1}, 1}}));
+  auto pos_list = std::make_shared<PosList>(
+      std::initializer_list<RowID>({RowID{ChunkID{0}, 2}, RowID{ChunkID{1}, 0}, RowID{ChunkID{1}, 1}}));
   auto reference_segment = ReferenceSegment(_test_table, ColumnID{0}, pos_list);
 
   // 2 * size of shared pointer (16 bytes as it holds two pointer) + 1 * size of ColumnID (2 Bytes, uint16_t)

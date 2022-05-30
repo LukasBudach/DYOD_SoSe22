@@ -317,6 +317,5 @@ TEST_F(OperatorsTableScanTest, ScanReferencedDictConditionDoesntHold) {
   scan6->execute();
 
   EXPECT_EQ(scan6->get_output()->row_count(), 0);
-
 }
 }  // namespace opossum
