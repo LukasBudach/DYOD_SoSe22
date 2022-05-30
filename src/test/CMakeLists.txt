@@ -13,7 +13,7 @@ set(
     operators/get_table_test.cpp
     operators/print_test.cpp
     operators/table_scan_test.cpp
-    storage/dictionary_segment_test.cpp
+    storage/fixed_width_integer_vector_test.cpp
     storage/reference_segment_test.cpp 
     storage/chunk_test.cpp
     storage/dictionary_segment_test.cpp
@@ -47,11 +47,11 @@ set(
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 # Configure hyriseTest
-add_executable(hyriseTest ${HYRISE_TEST_SOURCES} storage/fixed_width_integer_vector_test.cpp)
+add_executable(hyriseTest ${HYRISE_TEST_SOURCES})
 target_link_libraries(hyriseTest hyrise ${LIBRARIES})
 
 # Configure hyriseCoverageApp
-add_executable(hyriseCoverage EXCLUDE_FROM_ALL ${HYRISE_TEST_SOURCES} storage/fixed_width_integer_vector_test.cpp)
+add_executable(hyriseCoverage EXCLUDE_FROM_ALL ${HYRISE_TEST_SOURCES})
 target_link_libraries(hyriseCoverage hyriseCoverageLib ${LIBRARIES} --coverage)
 set_target_properties(hyriseCoverage PROPERTIES COMPILE_FLAGS "-fprofile-arcs -ftest-coverage")
 

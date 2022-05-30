@@ -33,6 +33,7 @@ void Table::add_column(const std::string& name, const std::string& type) {
     using ColumnDataType = typename decltype(data_type_t)::type;
     _chunks.back()->add_segment(std::make_shared<ValueSegment<ColumnDataType>>());
   });
+}
 
 void Table::add_column_definition(const std::string& name, const std::string& type) {
   // Implementation goes here
@@ -107,7 +108,7 @@ std::shared_ptr<const Chunk> Table::get_chunk(ChunkID chunk_id) const {
 }
 
 void Table::compress_chunk(const ChunkID chunk_id) {
-  auto thread_pool = std::vector<std::thread>{_column_types.size()};
+  auto threads = std::vector<std::thread>{_column_types.size()};
   const auto& raw_chunk = get_chunk(chunk_id);  // get_chunk performs range check, so we are safe
   auto compressed_chunk = std::make_shared<Chunk>();
   auto compressed_segments = std::vector<std::shared_ptr<AbstractSegment>>{_column_types.size()};
@@ -127,11 +128,11 @@ void Table::compress_chunk(const ChunkID chunk_id) {
 
   // create one worker per segment, they will start running the moment they are created
   for (auto column_index = ColumnID{0}; column_index < _column_types.size(); ++column_index) {
-    thread_pool[column_index] = std::thread(compress_segment, _column_types[column_index], column_index);
+    threads[column_index] = std::thread(compress_segment, _column_types[column_index], column_index);
   }
 
   // wait for all threads to finish execution
-  for (auto&& thread : thread_pool) {
+  for (auto&& thread : threads) {
     thread.join();
   }
 

@@ -145,7 +145,7 @@ TEST_F(StorageDictionarySegmentTest, SixteenBitIntegerVector) {
   EXPECT_EQ(dict_segment->attribute_vector()->width(), 2);
 }
 
-TEST_F(StorageDictionarySegmentTest, ThritytwoBitIntegerVector) {
+TEST_F(StorageDictionarySegmentTest, ThirtytwoBitIntegerVector) {
   value_segment_int = std::make_shared<ValueSegment<int32_t>>();
   for (auto value = int32_t{0}; value <= 65537; ++value) {
     value_segment_int->append(value);
