@@ -236,10 +236,8 @@ std::shared_ptr<const Table> TableScan::_on_execute() {
                 break;
               }
             }
-          // } else {
-          //   // in this case, take the encoded value and do the comparison as usual
-          // }
         } else {
+          // reference segment points to ValueSegment, not DictionarySegment
           const auto& value_segment_ptr = std::dynamic_pointer_cast<ValueSegment<Type>>(current_segment);
           const auto& values = value_segment_ptr->values();
 
@@ -366,6 +364,7 @@ std::shared_ptr<const Table> TableScan::_on_execute() {
               }
           }
         } else {
+          // not a ReferenceSegment or DictionarySegment, so ValueSegment
           const auto& value_segment_ptr = std::dynamic_pointer_cast<ValueSegment<Type>>(segment);
           const auto& values = value_segment_ptr->values();
           for (auto value_index = ChunkOffset{0}; value_index < values.size(); ++value_index) {
