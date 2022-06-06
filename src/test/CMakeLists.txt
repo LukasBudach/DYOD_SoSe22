@@ -13,7 +13,7 @@ set(
     operators/get_table_test.cpp
     operators/print_test.cpp
     operators/table_scan_test.cpp
-    storage/dictionary_segment_test.cpp
+    storage/fixed_width_integer_vector_test.cpp
     storage/reference_segment_test.cpp 
     storage/chunk_test.cpp
     storage/dictionary_segment_test.cpp
