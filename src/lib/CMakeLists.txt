@@ -58,7 +58,7 @@ target_link_libraries(
 set_target_properties(hyriseSanitizersLib PROPERTIES COMPILE_FLAGS "-fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer")
 
 # Configure the lib used for coverage
-add_library(hyriseCoverageLib EXCLUDE_FROM_ALL STATIC ${SOURCES} ../test/storage/fixed_width_integer_vector_test.cpp)
+add_library(hyriseCoverageLib EXCLUDE_FROM_ALL STATIC ${SOURCES})
 target_link_libraries(
     hyriseCoverageLib
     ${LIBRARIES}

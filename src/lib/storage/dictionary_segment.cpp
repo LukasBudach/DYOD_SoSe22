@@ -2,6 +2,7 @@
 
 #include "dictionary_segment.hpp"
 #include "type_cast.hpp"
+#include "value_segment.hpp"
 
 #include "utils/assert.hpp"
 
@@ -9,8 +10,9 @@ namespace opossum {
 
 template <typename T>
 DictionarySegment<T>::DictionarySegment(const std::shared_ptr<AbstractSegment>& abstract_segment) {
+  const auto& segment_values = std::static_pointer_cast<ValueSegment<T>>(abstract_segment)->values();
   for (auto index = ChunkOffset{0}; index < abstract_segment->size(); index++) {
-    const auto& value = type_cast<T>(abstract_segment->operator[](index));
+    const auto& value = segment_values[index];
     _dictionary.push_back(value);
   }
 
@@ -25,18 +27,19 @@ DictionarySegment<T>::DictionarySegment(const std::shared_ptr<AbstractSegment>& 
   const auto num_bits = std::ceil(std::log2(_dictionary.size()));
   Assert(num_bits <= 32, "The dictionary is too large for this compression algorithm!");
 
-  // initialize attribute vector with smallest applicable integer type
+  // initialize attribute vector with the smallest applicable integer type
   if (num_bits <= 8) {
     _attribute_vector = std::make_shared<FixedWidthIntegerVector<uint8_t>>();
   } else if (num_bits <= 16) {
     _attribute_vector = std::make_shared<FixedWidthIntegerVector<uint16_t>>();
   } else {
+    DebugAssert(num_bits <= 32, "We do not support any integers that require more than 32 bits for storage.");
     _attribute_vector = std::make_shared<FixedWidthIntegerVector<uint32_t>>();
   }
 
   // encode segment
   for (auto index = ChunkOffset{0}; index < abstract_segment->size(); ++index) {
-    const auto& value = type_cast<T>(abstract_segment->operator[](index));
+    const auto& value = segment_values[index];
     _attribute_vector->set(index, get_encoded_value(value));
   }
 }
