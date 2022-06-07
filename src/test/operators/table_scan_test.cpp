@@ -1,19 +1,13 @@
-#include <algorithm>
-#include <iostream>
 #include <map>
 #include <memory>
-#include <optional>
-#include <string>
 #include <utility>
 #include <vector>
 
 #include "base_test.hpp"
 #include "gtest/gtest.h"
 
-#include "operators/print.hpp"
 #include "operators/table_scan.hpp"
 #include "operators/table_wrapper.hpp"
-#include "storage/reference_segment.hpp"
 #include "storage/table.hpp"
 #include "types.hpp"
 #include "utils/load_table.hpp"
@@ -269,4 +263,59 @@ TEST_F(OperatorsTableScanTest, ScanOnWideDictionarySegment) {
   EXPECT_EQ(scan_2->get_output()->row_count(), static_cast<size_t>(37));
 }
 
+TEST_F(OperatorsTableScanTest, ReturnsCorrectColumn) {
+  const auto scan = std::make_shared<TableScan>(_table_wrapper, ColumnID{1}, ScanType::OpGreaterThan, 1);
+
+  EXPECT_EQ(scan->column_id(), ColumnID{1});
+}
+
+TEST_F(OperatorsTableScanTest, ReturnsCorrectScanType) {
+  const auto scan = std::make_shared<TableScan>(_table_wrapper, ColumnID{0}, ScanType::OpLessThanEquals, 1);
+
+  EXPECT_EQ(scan->scan_type(), ScanType::OpLessThanEquals);
+}
+
+TEST_F(OperatorsTableScanTest, ReturnsCorrectSearchValue) {
+  const auto scan = std::make_shared<TableScan>(_table_wrapper, ColumnID{1}, ScanType::OpEquals, 1234);
+
+  EXPECT_EQ(scan->search_value(), AllTypeVariant{1234});
+}
+
+TEST_F(OperatorsTableScanTest, ScanValueSegmentEqualConditionHolds) {
+  const auto scan = std::make_shared<TableScan>(_table_wrapper, ColumnID{0}, ScanType::OpEquals, 123);
+  scan->execute();
+
+  EXPECT_EQ(scan->get_output()->row_count(), 1);
+}
+
+TEST_F(OperatorsTableScanTest, ScanReferencedDictConditionDoesntHold) {
+  // scan 1 just passes everything through
+  const auto scan1 = std::make_shared<TableScan>(_table_wrapper_even_dict, ColumnID{0}, ScanType::OpNotEquals, -1);
+  scan1->execute();
+
+  const auto scan2 = std::make_shared<TableScan>(scan1, ColumnID{0}, ScanType::OpEquals, 123);
+  scan2->execute();
+
+  EXPECT_EQ(scan2->get_output()->row_count(), 0);
+
+  const auto scan3 = std::make_shared<TableScan>(scan1, ColumnID{0}, ScanType::OpLessThan, -1);
+  scan3->execute();
+
+  EXPECT_EQ(scan3->get_output()->row_count(), 0);
+
+  const auto scan4 = std::make_shared<TableScan>(scan1, ColumnID{0}, ScanType::OpLessThanEquals, -1);
+  scan4->execute();
+
+  EXPECT_EQ(scan4->get_output()->row_count(), 0);
+
+  const auto scan5 = std::make_shared<TableScan>(scan1, ColumnID{0}, ScanType::OpGreaterThan, 9001);
+  scan5->execute();
+
+  EXPECT_EQ(scan5->get_output()->row_count(), 0);
+
+  const auto scan6 = std::make_shared<TableScan>(scan1, ColumnID{0}, ScanType::OpGreaterThanEquals, 9001);
+  scan6->execute();
+
+  EXPECT_EQ(scan6->get_output()->row_count(), 0);
+}
 }  // namespace opossum

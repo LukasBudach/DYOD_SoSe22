@@ -71,11 +71,11 @@ class DictionarySegment : public AbstractSegment {
   // Returns the calculated memory usage.
   size_t estimate_memory_usage() const final;
 
+  const ValueID get_encoded_value(const T& raw_value) const;
+
  protected:
   std::vector<T> _dictionary{};  // contains unique values from ValueSegment - index is encoded value
   std::shared_ptr<AbstractAttributeVector> _attribute_vector{};  // contains encoded values
-
-  const ValueID get_encoded_value(const T& raw_value) const;
 };
 
 }  // namespace opossum

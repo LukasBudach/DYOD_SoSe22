@@ -21,41 +21,26 @@ class ReferenceSegment : public AbstractSegment {
  public:
   // Creates a reference segment. The parameters specify the positions and the referenced column.
   ReferenceSegment(const std::shared_ptr<const Table>& referenced_table, const ColumnID referenced_column_id,
-                   const std::shared_ptr<const PosList>& pos) {
-    // TODO(student) implement it in a source file and change this to a declaration.
-  }
+                   const std::shared_ptr<const PosList>& pos);
 
-  AllTypeVariant operator[](const ChunkOffset chunk_offset) const override {
-    // TODO(student) implement it in a source file and change this to a declaration.
-    return AllTypeVariant{};
-  }
+  AllTypeVariant operator[](const ChunkOffset chunk_offset) const override;
 
-  void append(const AllTypeVariant&) override { throw std::logic_error("ReferenceSegment is immutable"); }
+  void append(const AllTypeVariant&) override;
 
-  ChunkOffset size() const override {
-    // TODO(student) implement it in a source file and change this to a declaration.
-    throw std::logic_error("ReferenceSegment is not implemented yet.");
-  }
+  ChunkOffset size() const override;
 
-  const std::shared_ptr<const PosList>& pos_list() const {
-    // TODO(student) implement it in a source file and change this to a declaration.
-    throw std::logic_error("ReferenceSegment is not implemented yet.");
-  }
+  const std::shared_ptr<const PosList>& pos_list() const;
 
-  const std::shared_ptr<const Table>& referenced_table() const {
-    // TODO(student) implement it in a source file and change this to a declaration.
-    throw std::logic_error("ReferenceSegment is not implemented yet.");
-  }
+  const std::shared_ptr<const Table>& referenced_table() const;
 
-  ColumnID referenced_column_id() const {
-    // TODO(student) implement it in a source file and change this to a declaration.
-    throw std::logic_error("ReferenceSegment is not implemented yet.");
-  }
+  ColumnID referenced_column_id() const;
 
-  size_t estimate_memory_usage() const final {
-    // TODO(student) implement it in a source file and change this to a declaration.
-    throw std::logic_error("ReferenceSegment is not implemented yet.");
-  }
+  size_t estimate_memory_usage() const final;
+
+ protected:
+  const std::shared_ptr<const Table> _referenced_table{};
+  const ColumnID _referenced_column_id{};
+  const std::shared_ptr<const PosList> _pos{};
 };
 
 }  // namespace opossum

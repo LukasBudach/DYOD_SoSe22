@@ -1,5 +1,8 @@
 #include "abstract_operator.hpp"
 
+#include "assert.h"
+#include "storage/reference_segment.hpp"
+
 namespace opossum {
 
 AbstractOperator::AbstractOperator(const std::shared_ptr<const AbstractOperator> left,
@@ -9,7 +12,11 @@ AbstractOperator::AbstractOperator(const std::shared_ptr<const AbstractOperator>
 void AbstractOperator::execute() { _output = _on_execute(); }
 
 std::shared_ptr<const Table> AbstractOperator::get_output() const {
-  // TODO(student): You should place some meaningful checks here
+  // ensure we return an empty chunk only if the chunk count is also one
+  if (_output->get_chunk(ChunkID{_output->chunk_count() - ChunkID{1}})->size() == 0) {
+    Assert(_output->chunk_count() == ChunkID{1},
+           "Detected an empty chunk in an operator result with 2 or more chunks.");
+  }
 
   return _output;
 }

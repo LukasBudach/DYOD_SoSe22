@@ -36,7 +36,8 @@ void Table::add_column(const std::string& name, const std::string& type) {
 }
 
 void Table::add_column_definition(const std::string& name, const std::string& type) {
-  // Implementation goes here
+  _column_names.push_back(name);
+  _column_types.push_back(type);
 }
 
 void Table::append(const std::vector<AllTypeVariant>& values) {
